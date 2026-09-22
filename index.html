@@ -186,6 +186,60 @@
     .room-bedroom { grid-column: span 3; }
     .room-utility { grid-column: span 6; }
 
+    /* 外へ出るドア：部屋と同じ6マスを使いますが、壁ではなく屋根の色で塗って、
+       ここだけ家の外につながっていることを示します */
+    .outdoor {
+      grid-column: span 6;
+      display: block;
+      padding: 1.7rem 1.6rem 1.8rem;
+      border-radius: 10px 10px 4px 4px;
+      background: linear-gradient(160deg, var(--roof), var(--roof-2));
+      box-shadow: 0 8px 24px rgba(74, 59, 52, 0.22);
+      color: #fff8f5;
+      text-align: center;
+      text-decoration: none;
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .outdoor:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(74, 59, 52, 0.3);
+    }
+    .outdoor > span { display: block; }
+    .outdoor-eyebrow {
+      font-size: 0.85rem;
+      letter-spacing: 0.22em;
+      opacity: 0.85;
+    }
+    .outdoor-eyebrow [lang="en"] { font-family: var(--script); font-style: italic; letter-spacing: 0.1em; }
+    .outdoor-title {
+      margin: 0.2rem 0 0.5rem;
+      font-family: var(--serif);
+      font-weight: 800;
+      font-size: clamp(1.7rem, 5vw, 2.3rem);
+      letter-spacing: 0.1em;
+      line-height: 1.3;
+    }
+    .outdoor-title [lang="en"] { font-family: var(--script); font-style: italic; font-weight: 600; letter-spacing: 0.02em; }
+    .outdoor-text {
+      max-width: 34em;
+      margin: 0 auto;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      opacity: 0.94;
+    }
+    /* 「歩いてみる →」の札。ドアノブのつもりです */
+    .outdoor-go {
+      width: fit-content;
+      margin: 1.1rem auto 0;
+      padding: 0.45rem 1.5rem;
+      border: 2px solid rgba(255, 255, 255, 0.75);
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+    .outdoor-go [lang="en"] { font-family: var(--script); font-style: italic; font-size: 1.05em; }
+    .outdoor:hover .outdoor-go { background: rgba(255, 255, 255, 0.16); }
+
     .room h2 {
       display: inline-block;
       margin: 0 0 0.6rem;
@@ -419,15 +473,17 @@
     body.plan footer { margin-top: 2.4rem; }
     body.plan .roof p { margin-top: 1.6rem; }
     body.plan .room > *, body.plan .tile > * { margin-top: 1.4rem; }
+    body.plan .outdoor > * { margin-top: 1.4rem; }
     body.plan .shelf, body.plan .tip, body.plan .tiles, body.plan .hall { padding-top: 2.2rem; }
 
     /* --- スマホでは1列に：部屋を縦に積む --- */
     @media (max-width: 720px) {
-      .room-living, .room-kitchen, .room-hall, .room-study, .room-bedroom, .room-utility { grid-column: auto; }
+      .room-living, .room-kitchen, .room-hall, .room-study, .room-bedroom, .room-utility, .outdoor { grid-column: auto; }
       main { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) {
       body { transition: none; }
+      .outdoor { transition: none; }
     }
   </style>
 </head>
@@ -616,6 +672,17 @@
       </div>
     </section>
 
+    <!-- 外へ出るドア。家の中の部屋ではなく、別のページ（コードの地図）へつながります -->
+    <a class="outdoor" href="map/index.html" data-tag="a">
+      <span class="outdoor-eyebrow"><span lang="ja">この家を出たら</span><span lang="en">When you leave this house</span></span>
+      <span class="outdoor-title"><span lang="ja">コードの地図</span><span lang="en">A Map of Code</span></span>
+      <span class="outdoor-text">
+        <span lang="ja">家（ウェブサイト）を出て、街を歩いてみよう。コードにどんな種類があるのか、どの言語を選べばいいのか、どの言語にも共通する部品とは何かを、片付けにたとえて見ていきます。</span>
+        <span lang="en">Step out of the house, and walk into the town. What kinds of code there are, which language to choose, and the parts every language shares — all in terms of tidying.</span>
+      </span>
+      <span class="outdoor-go"><span lang="ja">歩いてみる</span><span lang="en">Take a walk</span> →</span>
+    </a>
+
   </main>
 
   <!-- footer：出口の棚。連絡先やコピーライトを置く -->
@@ -624,8 +691,6 @@
       <svg class="feather" viewBox="0 0 24 24" aria-hidden="true" style="display:none"><path d="M20 4 C12 4, 5 10, 4 20 C10 18, 16 15, 19 9 M8 16 L4 20 M12 12 L9 15 M16 8 L13 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span lang="ja">© 2026 ひだまりの家　HTMLで建てました</span><span lang="en">© 2026 Hidamari House — built of HTML</span>
     </p>
-    <!-- 家の外へ出るドア。別のページ（コードの地図）へつながります -->
-    <a href="map/index.html" data-tag="a"><span lang="ja">家を出て、街へ ── コードの地図</span><span lang="en">Out of the house, into the town — A Map of Code</span></a>
     <a href="#top" data-tag="a"><span lang="ja">玄関へ戻る</span><span lang="en">Back to the entrance</span></a>
   </footer>
 
