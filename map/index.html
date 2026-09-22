@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>コードの地図 | ウェブサイトの外へ</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Maru+Gothic:wght@400;500&family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===== 日英の切り替え：html の lang が "ja" のときは英語を隠し、"en" のときは日本語を隠す ===== */
+    html[lang="ja"] [lang="en"], html[lang="en"] [lang="ja"] { display: none; }
+
+    /* ===== 色の置き場（ひだまりの家と同じ色づかい）===== */
+    :root {
+      --bg: #fbe0d3;
+      --bg-grad: linear-gradient(180deg, #fbe0d3 0%, #fdf1ea 45%, #fdf6f2 100%);
+      --wall: #fffaf6;
+      --floor: #f8e6dd;
+      --roof: #c1786a;
+      --roof-2: #b0654f;
+      --door: #d98a95;
+      --gold: #c9a165;
+      --ink: #4a3b34;
+      --sub: #8a746b;
+      --line: #ecd6cb;
+      --link: #a85a52;
+      --code-bg: #3a2a24;
+      --code-ink: #f5ece5;
+      --code-mute: #c9a165;
+      --serif: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+      --sans: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+      --script: "Cormorant Garamond", "Times New Roman", serif;
+
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #241a19; --bg-grad: linear-gradient(180deg, #241a19 0%, #2a1e1c 100%);
+        --wall: #2f2320; --floor: #3a2b27; --roof: #b0654f; --roof-2: #96543f;
+        --door: #c97b83; --gold: #d8b378; --ink: #f3e6df; --sub: #cbb3a8; --line: #4a372f; --link: #e3a39a;
+        --code-bg: #1c1210;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #241a19; --bg-grad: linear-gradient(180deg, #241a19 0%, #2a1e1c 100%);
+      --wall: #2f2320; --floor: #3a2b27; --roof: #b0654f; --roof-2: #96543f;
+      --door: #c97b83; --gold: #d8b378; --ink: #f3e6df; --sub: #cbb3a8; --line: #4a372f; --link: #e3a39a;
+      --code-bg: #1c1210;
+    }
+
+    html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 4rem); scroll-behavior: smooth; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding-bottom: 5rem;             /* 右下のスイッチと重ならない余白 */
+      background: var(--bg-grad);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 17px;
+      line-height: 1.85;
+    }
+    [hidden] { display: none !important; }
+    .wrap { width: min(860px, calc(100% - 2rem)); margin-inline: auto; }
+    a { color: var(--link); }
+    a:focus-visible, button:focus-visible, summary:focus-visible {
+      outline: 3px solid var(--link);
+      outline-offset: 3px;
+    }
+
+    /* ===== 右下の言語スイッチ ===== */
+    .toolbar { position: fixed; right: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); z-index: 10; }
+    .toolbar button {
+      min-height: 44px;
+      padding: 0.5rem 1.1rem;
+      border: 2px solid var(--roof-2);
+      border-radius: 999px;
+      background: var(--wall);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    /* ===== ヒーロー ===== */
+    .hero { padding: 1.6rem 0 1rem; }
+
+    /* 写真の額。中の写真と、その上に重ねる文字をまとめて収めます */
+    .hero-frame {
+      position: relative;
+      isolation: isolate;
+      margin: 0 0 1.2rem;
+      border-radius: 14px;
+      overflow: hidden;                 /* はみ出した写真の角を丸く切り落とす */
+      box-shadow: 0 10px 30px rgba(74, 59, 52, 0.2);
+    }
+    .hero-photo {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;              /* 読み込み前から場所を取っておき、ガタつきを防ぐ */
+      object-fit: cover;                /* 額に合わせて写真の中身を切り取って収める */
+    }
+    /* 写真の上に、下へゆくほど濃くなる幕をかける。文字を読みやすくするため */
+    .hero-frame::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg,
+        rgba(38, 22, 17, 0.10) 0%,
+        rgba(38, 22, 17, 0.42) 46%,
+        rgba(38, 22, 17, 0.80) 100%);
+    }
+    /* 幕の上に置く文字。z-index で幕より手前に */
+    .hero-text {
+      position: absolute;
+      inset: auto 0 0 0;
+      z-index: 1;
+      padding: 1.5rem 1.6rem 1.6rem;
+      color: #fff;
+      text-shadow: 0 1px 14px rgba(28, 14, 10, 0.65);
+    }
+    .hero h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-weight: 800;
+      font-size: clamp(2.1rem, 8vw, 3rem);
+      letter-spacing: 0.08em;
+      line-height: 1.3;
+    }
+    .hero h1 [lang="en"] { font-family: var(--script); font-style: italic; font-weight: 600; letter-spacing: 0.02em; }
+    .hero .lead { margin: 0.3rem 0 0; font-family: var(--serif); font-size: 1.15rem; font-weight: 600; }
+    .hero .lead [lang="en"] { font-family: var(--script); font-style: italic; font-size: 1.05em; }
+    .hero p { margin: 0 0 0.6rem; }
+
+    /* ===== ページ内ジャンプ（上に張りつく）===== */
+    .jump {
+      position: sticky;
+      top: env(safe-area-inset-top, 0px);
+      z-index: 5;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+    }
+    .jump-in {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.6rem 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .jump-in::-webkit-scrollbar { display: none; }
+    .jump a {
+      display: flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 0 0.95rem;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      background: var(--wall);
+      color: var(--ink);
+      font-size: 0.9rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    /* ===== セクション共通 ===== */
+    section { padding: 2.2rem 0 0.4rem; }
+    section h2 {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin: 0 0 0.4rem;
+      font-family: var(--serif);
+      font-size: 1.45rem;
+      line-height: 1.5;
+    }
+    section h2 [lang="en"] { font-family: var(--script); font-style: italic; font-size: 1.05em; }
+    .num {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 1.9rem;
+      height: 1.9rem;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #3a2a10;
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+    .intro { margin: 0 0 1rem; color: var(--sub); }
+
+    .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+
+    .card {
+      min-width: 0;
+      background: var(--wall);
+      border: 2px solid var(--line);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      box-shadow: inset 0 -8px 0 var(--floor);
+    }
+    .card h3 {
+      margin: 0 0 0.3rem;
+      font-family: var(--serif);
+      font-size: 1.15rem;
+      line-height: 1.5;
+    }
+    .card h3 [lang="en"] { font-family: var(--script); font-style: italic; font-size: 1.08em; }
+    .card p { margin: 0 0 0.5rem; }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* 「片付けでいうと」の吹き出し */
+    .analogy {
+      margin-top: 0.6rem;
+      padding: 0.45rem 0.8rem;
+      border-left: 4px solid var(--gold);
+      border-radius: 0 6px 6px 0;
+      background: var(--floor);
+      font-size: 0.93rem;
+    }
+    .analogy b { font-weight: 500; }
+
+    .note { margin: 1rem 0 0; padding: 0.7rem 1rem; border-radius: 8px; background: var(--floor); font-size: 0.95rem; }
+
+    code {
+      padding: 0.1em 0.4em;
+      border-radius: 4px;
+      background: var(--floor);
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 0.88em;
+    }
+
+    /* ===== ボタン（切り替え用）===== */
+    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1rem; }
+    .chip {
+      min-height: 40px;
+      padding: 0.3rem 1rem;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      background: var(--wall);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.92rem;
+      cursor: pointer;
+    }
+    .chip[aria-pressed="true"] { border-color: var(--door); background: var(--door); color: #fff6f2; }
+
+    /* ===== 言語カード ===== */
+    .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.5rem; }
+    .tag {
+      padding: 0 0.6rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--floor);
+      color: var(--sub);
+      font-size: 0.78rem;
+      line-height: 1.7;
+    }
+
+    /* ===== コードの窓 ===== */
+    .code {
+      margin: 0.5rem 0 0;
+      padding: 0.9rem 1rem;
+      overflow-x: auto;
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-ink);
+      font: 14px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      tab-size: 2;
+    }
+    .code .c { color: var(--code-mute); }
+    .out {
+      margin: 0.4rem 0 0;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      background: var(--floor);
+      font-size: 0.9rem;
+    }
+    .out b { margin-right: 0.6em; color: var(--sub); font-weight: 500; }
+
+    /* 選んだ言語（Python など）のコードだけ見せる。JavaScript が data-code を書き換える */
+    #parts[data-code="py"]  .by-lang:not([data-lang="py"]),
+    #parts[data-code="js"]  .by-lang:not([data-lang="js"]),
+    #parts[data-code="lua"] .by-lang:not([data-lang="lua"]) { display: none; }
+
+    .lang-note { margin: 0 0 1rem; padding: 0.6rem 1rem; border-radius: 8px; background: var(--floor); font-size: 0.93rem; }
+    .parts-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.9rem; }
+    .part-head { display: flex; align-items: baseline; gap: 0.6rem; }
+    .part-head h3 { margin: 0; }
+    .part-no { color: var(--gold); font-family: var(--serif); font-size: 1.3rem; font-weight: 800; }
+
+    /* ===== 流れ図（スマホでは縦、広い画面では横）===== */
+    .flow { display: flex; flex-direction: column; gap: 1.1rem; margin-top: 0.5rem; }
+    .fstep {
+      position: relative;
+      padding: 0.55rem 0.8rem;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: var(--floor);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .fstep b { display: block; color: var(--sub); font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; }
+    .fstep:not(:last-child)::after {
+      content: "↓";
+      position: absolute;
+      left: 50%;
+      bottom: -1.15rem;
+      transform: translateX(-50%);
+      color: var(--sub);
+      line-height: 1;
+    }
+    .layer { padding-bottom: 0.7rem; }
+    .layer .name { display: block; margin-bottom: 0.2rem; font-family: var(--serif); font-size: 1.05rem; font-weight: 800; letter-spacing: 0; color: var(--ink); }
+    .layer small { display: block; margin-top: 0.3rem; color: var(--sub); font-size: 0.85rem; }
+    .sub-h { margin: 1.6rem 0 0.6rem; font-family: var(--serif); font-size: 1.15rem; }
+
+    /* ===== 組み立ての手順 ===== */
+    .build { display: grid; gap: 0.7rem; margin: 0; padding: 0; list-style: none; counter-reset: s; }
+    .build li {
+      position: relative;
+      padding: 0.7rem 0.9rem 0.7rem 3.1rem;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: var(--wall);
+      counter-increment: s;
+    }
+    .build li::before {
+      content: counter(s);
+      position: absolute;
+      left: 0.85rem;
+      top: 0.75rem;
+      display: grid;
+      place-items: center;
+      width: 1.7rem;
+      height: 1.7rem;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #3a2a10;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .build b { display: block; font-family: var(--serif); font-size: 1.05rem; }
+    .build .desc { font-size: 0.95rem; }
+
+    /* ===== 用語辞典 ===== */
+    details { margin-bottom: 0.5rem; border: 2px solid var(--line); border-radius: 8px; background: var(--wall); }
+    summary { min-height: 44px; padding: 0.55rem 1rem; font-weight: 500; cursor: pointer; }
+    details p { margin: 0; padding: 0 1rem 0.8rem; }
+
+    /* ===== はじめの一歩 ===== */
+    .goals { display: grid; gap: 0.5rem; }
+    .goal {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.2rem 0.7rem;
+      padding: 0.6rem 1rem;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: var(--wall);
+    }
+    .goal .want { color: var(--sub); font-size: 0.93rem; }
+    .goal .arrow { color: var(--gold); font-weight: 800; }
+    .goal .to { font-family: var(--serif); font-size: 1.1rem; font-weight: 800; }
+    .goal .to[lang="en"], .goal .to [lang="en"] { font-family: var(--script); font-style: italic; }
+
+    .closing {
+      margin: 2rem 0 0;
+      padding: 1.4rem 1.2rem;
+      border-radius: 10px;
+      background: linear-gradient(160deg, var(--roof), var(--roof-2));
+      color: #fff;
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      font-weight: 600;
+      line-height: 1.9;
+      text-align: center;
+    }
+    .closing [lang="en"] { font-family: var(--script); font-style: italic; font-weight: 500; }
+    footer { padding: 1.5rem 0 1rem; color: var(--sub); font-size: 0.85rem; text-align: center; }
+    footer p { margin: 0 0 0.45rem; }
+    footer [lang="en"] { font-family: var(--script); font-style: italic; }
+
+    /* ===== 広い画面 ===== */
+    @media (min-width: 640px) {
+      /* 横長の画面では、写真も横長に切り取る */
+      .hero-photo { aspect-ratio: 16 / 9; }
+      .hero-text { padding: 1.8rem 2rem 1.9rem; }
+      .flow { flex-direction: row; gap: 1.6rem; }
+      .fstep { flex: 1; }
+      .fstep:not(:last-child)::after {
+        content: "→";
+        left: auto;
+        right: -1.3rem;
+        bottom: auto;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 右下の言語スイッチ。押したときの動きは、いちばん下の <script> が担当します -->
+  <div class="toolbar">
+    <button id="lang-toggle" type="button"><span lang="ja">English</span><span lang="en">日本語</span></button>
+  </div>
+
+  <!-- ★日英の書き方：同じ場所に <span lang="ja"> と <span lang="en"> を並べて置き、
+       使わないほうを上の CSS が隠します。コードの中の文字（"冬服" など）も同じ方法で切り替えます -->
+
+  <header class="hero wrap">
+    <!-- 写真の額。この中に、写真とその上に重ねる文字が入ります -->
+    <div class="hero-frame">
+      <img class="hero-photo" src="img/entrance.jpg" width="1400" height="1050" decoding="async"
+           alt="ガラスの扉が開いた玄関ホール。その向こうに庭の木立が広がっている">
+      <div class="hero-text">
+        <h1><span lang="ja">コードの地図</span><span lang="en">A Map of Code</span></h1>
+        <p class="lead">
+          <span lang="ja">家（ウェブサイト）を出て、街を歩いてみよう。</span>
+          <span lang="en">Step out of the house, and walk into the town.</span>
+        </p>
+      </div>
+    </div>
+    <p>
+      <span lang="ja">コードは、コンピュータに渡す「手順書」です。片付けで「冬服は手前へ、夏服は奥へ」と決めるのと、よく似ています。</span>
+      <span lang="en">Code is a set of instructions handed to the computer. It is much like deciding, when tidying, that “winter clothes go to the front, summer clothes to the back”.</span>
+    </p>
+    <p>
+      <span lang="ja">このページでは、コードにどんな種類があるのか、どう組み立てるのかを、片付けにたとえて見ていきます。</span>
+      <span lang="en">This page looks at the kinds of code there are, and how they are put together, all in terms of tidying.</span>
+    </p>
+  </header>
+
+  <nav class="jump" aria-label="Page navigation">
+    <div class="wrap jump-in">
+      <a href="#kinds"><span lang="ja">種類</span><span lang="en">Kinds</span></a>
+      <a href="#langs"><span lang="ja">言語</span><span lang="en">Languages</span></a>
+      <a href="#parts"><span lang="ja">共通の部品</span><span lang="en">Shared parts</span></a>
+      <a href="#build"><span lang="ja">組み立て方</span><span lang="en">Building</span></a>
+      <a href="#layers"><span lang="ja">表と裏</span><span lang="en">Front &amp; back</span></a>
+      <a href="#words"><span lang="ja">用語</span><span lang="en">Terms</span></a>
+      <a href="#start"><span lang="ja">はじめの一歩</span><span lang="en">First steps</span></a>
+    </div>
+  </nav>
+
+  <main class="wrap">
+
+    <!-- ===== 1. 書くものの種類 ===== -->
+    <section id="kinds">
+      <h2><span class="num">1</span><span lang="ja">書くものは4種類</span><span lang="en">Four kinds of writing</span></h2>
+      <p class="intro">
+        <span lang="ja">「コード」といっても、書くものは大きく4つに分かれます。</span>
+        <span lang="en">“Code” covers a good deal, but what you write falls into four broad kinds.</span>
+      </p>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h3><span lang="ja">ラベル</span><span lang="en">Labels</span>　<small>HTML</small></h3>
+          <p>
+            <span lang="ja">「これは見出し」「これは段落」と、名前を付けます。</span>
+            <span lang="en">Gives names: “this is a heading”, “this is a paragraph”.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>片付けでいうと</b>　箱にラベルを貼る</span>
+            <span lang="en"><b>In tidying terms:</b> sticking labels on boxes</span>
+          </p>
+        </div>
+        <div class="card">
+          <h3><span lang="ja">見た目</span><span lang="en">Looks</span>　<small>CSS</small></h3>
+          <p>
+            <span lang="ja">色や大きさ、並べ方を決めます。</span>
+            <span lang="en">Decides the colours, the sizes and the arrangement.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>片付けでいうと</b>　部屋のインテリア</span>
+            <span lang="en"><b>In tidying terms:</b> the decoration of a room</span>
+          </p>
+        </div>
+        <div class="card">
+          <h3><span lang="ja">手順</span><span lang="en">Steps</span>　<small>JavaScript, Python …</small></h3>
+          <p>
+            <span lang="ja">「こうなったら、こうする」という動きを書きます。</span>
+            <span lang="en">Writes down what happens: “when this occurs, do that”.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>片付けでいうと</b>　「冬服は手前へ」というルール</span>
+            <span lang="en"><b>In tidying terms:</b> a rule such as “winter clothes go to the front”</span>
+          </p>
+        </div>
+        <div class="card">
+          <h3><span lang="ja">質問</span><span lang="en">Questions</span>　<small>SQL</small></h3>
+          <p>
+            <span lang="ja">データの倉庫に「○○を全部持ってきて」と頼みます。</span>
+            <span lang="en">Asks the warehouse of data: “bring me every such-and-such”.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>片付けでいうと</b>　倉庫番への注文書</span>
+            <span lang="en"><b>In tidying terms:</b> an order slip for the storekeeper</span>
+          </p>
+        </div>
+      </div>
+
+      <p class="note">
+        <span lang="ja">一般に「プログラミング言語」と呼ばれるのは、おもに3つ目の「手順」の仲間です。HTMLとCSSは、ラベルと見た目を書く言葉です。</span>
+        <span lang="en">What people usually call a “programming language” is mostly the third kind, steps. HTML and CSS are languages for labels and looks.</span>
+      </p>
+    </section>
+
+    <!-- ===== 2. 言語を選ぶ ===== -->
+    <section id="langs">
+      <h2><span class="num">2</span><span lang="ja">作りたいもので選ぶ</span><span lang="en">Choose by what you wish to make</span></h2>
+      <p class="intro">
+        <span lang="ja">日本語と英語のように、言語が違っても「できること」は似ています。得意な場所が違うだけです。作りたいものを選ぶと、その街の言葉が出ます。</span>
+        <span lang="en">Languages differ, much as Japanese and English do, yet they can do broadly similar things; each is simply at home in a different place. Pick what you wish to make, and the languages of that town will appear.</span>
+      </p>
+
+      <div class="chips" role="group">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true"><span lang="ja">すべて</span><span lang="en">All</span></button>
+        <button class="chip" type="button" data-filter="web" aria-pressed="false"><span lang="ja">サイト</span><span lang="en">Websites</span></button>
+        <button class="chip" type="button" data-filter="app" aria-pressed="false"><span lang="ja">アプリ</span><span lang="en">Apps</span></button>
+        <button class="chip" type="button" data-filter="game" aria-pressed="false"><span lang="ja">ゲーム</span><span lang="en">Games</span></button>
+        <button class="chip" type="button" data-filter="ai" aria-pressed="false"><span lang="ja">AI・自動化</span><span lang="en">AI &amp; automation</span></button>
+        <button class="chip" type="button" data-filter="data" aria-pressed="false"><span lang="ja">データ</span><span lang="en">Data</span></button>
+      </div>
+
+      <div class="grid grid-2" id="lang-list">
+        <div class="card lang-card" data-kinds="web">
+          <h3><span lang="ja">HTML と CSS</span><span lang="en">HTML and CSS</span></h3>
+          <div class="tags"><span class="tag"><span lang="ja">サイト</span><span lang="en">Website</span></span></div>
+          <p>
+            <span lang="ja">ウェブページの骨組みと見た目を作ります。</span>
+            <span lang="en">Builds the frame and the look of a web page.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>たとえると</b>　家の骨組みと内装</span>
+            <span lang="en"><b>Think of it as</b> the frame and decoration of a house</span>
+          </p>
+        </div>
+        <div class="card lang-card" data-kinds="web app">
+          <h3>JavaScript</h3>
+          <div class="tags"><span class="tag"><span lang="ja">サイト</span><span lang="en">Website</span></span><span class="tag"><span lang="ja">アプリ</span><span lang="en">App</span></span></div>
+          <p>
+            <span lang="ja">ブラウザで動く言葉の定番です。サイトに動きを付けます。アプリや裏方の仕事にも使えます。</span>
+            <span lang="en">The standard language of the browser. It brings a site to life, and serves for apps and behind-the-scenes work too.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>たとえると</b>　家の電気とスイッチ</span>
+            <span lang="en"><b>Think of it as</b> the wiring and switches of a house</span>
+          </p>
+        </div>
+        <div class="card lang-card" data-kinds="ai data">
+          <h3>Python</h3>
+          <div class="tags"><span class="tag"><span lang="ja">AI・自動化</span><span lang="en">AI &amp; automation</span></span><span class="tag"><span lang="ja">データ</span><span lang="en">Data</span></span></div>
+          <p>
+            <span lang="ja">読みやすい書き方で、AI、自動化、データ分析の定番です。</span>
+            <span lang="en">Easy to read, and the usual choice for AI, automation and data analysis.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>たとえると</b>　事務作業を任せられる万能の助手</span>
+            <span lang="en"><b>Think of it as</b> a versatile assistant who takes over the paperwork</span>
+          </p>
+        </div>
+        <div class="card lang-card" data-kinds="app">
+          <h3>Swift</h3>
+          <div class="tags"><span class="tag"><span lang="ja">アプリ</span><span lang="en">App</span></span></div>
+          <p>
+            <span lang="ja">iPhone、iPad、Mac のアプリを作ります。</span>
+            <span lang="en">Builds apps for iPhone, iPad and Mac.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>たとえると</b>　Apple の街の公用語</span>
+            <span lang="en"><b>Think of it as</b> the official language of Apple’s town</span>
+          </p>
+        </div>
+        <div class="card lang-card" data-kinds="app">
+          <h3>Kotlin</h3>
+          <div class="tags"><span class="tag"><span lang="ja">アプリ</span><span lang="en">App</span></span></div>
+          <p>
+            <span lang="ja">Android アプリの主力の言語です。</span>
+            <span lang="en">The main language for Android apps.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>たとえると</b>　Android の街の公用語</span>
+            <span lang="en"><b>Think of it as</b> the official language of Android’s town</span>
+          </p>
+        </div>
+        <div class="card lang-card" data-kinds="app">
+          <h3>Dart (Flutter)</h3>
+          <div class="tags"><span class="tag"><span lang="ja">アプリ</span><span lang="en">App</span></span></div>
+          <p>
+            <span lang="ja">1つのコードで、iPhone と Android の両方のアプリを作れます。</span>
+            <span lang="en">One body of code can make apps for both iPhone and Android.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>たとえると</b>　両方の街に通じる通訳</span>
+            <span lang="en"><b>Think of it as</b> an interpreter understood in both towns</span>
+          </p>
+        </div>
+        <div class="card lang-card" data-kinds="game">
+          <h3>Luau</h3>
+          <div class="tags"><span class="tag"><span lang="ja">ゲーム</span><span lang="en">Game</span></span></div>
+          <p>
+            <span lang="ja">Roblox のゲームを作る言葉です。軽くて小さな Lua という言語の仲間です。</span>
+            <span lang="en">The language of Roblox games, a relative of the small, light language Lua.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>たとえると</b>　Roblox という遊園地の、乗り物の作り方</span>
+            <span lang="en"><b>Think of it as</b> how to build the rides in the Roblox funfair</span>
+          </p>
+        </div>
+        <div class="card lang-card" data-kinds="game">
+          <h3>C#</h3>
+          <div class="tags"><span class="tag"><span lang="ja">ゲーム</span><span lang="en">Game</span></span></div>
+          <p>
+            <span lang="ja">Unity など、本格的なゲーム作りで定番の言葉です。</span>
+            <span lang="en">The usual choice for serious game-making in Unity and the like.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>たとえると</b>　大きな遊園地を建てる本格道具</span>
+            <span lang="en"><b>Think of it as</b> the proper toolkit for building a great funfair</span>
+          </p>
+        </div>
+        <div class="card lang-card" data-kinds="game">
+          <h3>Scratch</h3>
+          <div class="tags"><span class="tag"><span lang="ja">ゲーム</span><span lang="en">Game</span></span><span class="tag"><span lang="ja">入門</span><span lang="en">Beginner</span></span></div>
+          <p>
+            <span lang="ja">ブロックを組み合わせて作る入門用です。考え方の練習に向いています。</span>
+            <span lang="en">Snap blocks together to build. Ideal for practising the way of thinking.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>たとえると</b>　レゴブロック</span>
+            <span lang="en"><b>Think of it as</b> Lego bricks</span>
+          </p>
+        </div>
+        <div class="card lang-card" data-kinds="data">
+          <h3>SQL</h3>
+          <div class="tags"><span class="tag"><span lang="ja">データ</span><span lang="en">Data</span></span></div>
+          <p>
+            <span lang="ja">データベースに質問して、必要な情報を取り出します。</span>
+            <span lang="en">Puts questions to a database and fetches the information you need.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>たとえると</b>　倉庫番への注文書</span>
+            <span lang="en"><b>Think of it as</b> an order slip for the storekeeper</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3. 共通の部品 ===== -->
+    <section id="parts" data-code="py">
+      <h2><span class="num">3</span><span lang="ja">どの言語にも共通する部品</span><span lang="en">Parts every language shares</span></h2>
+      <p class="intro">
+        <span lang="ja">言語が違っても、部品の考え方は同じです。同じ内容を3つの言語で書き比べます。言語を選んでみましょう。</span>
+        <span lang="en">The ideas are the same whatever the language. Here is one thing written in three of them. Choose one.</span>
+      </p>
+
+      <div class="chips" role="group">
+        <button class="chip" type="button" data-code-tab="py" aria-pressed="true">Python</button>
+        <button class="chip" type="button" data-code-tab="js" aria-pressed="false">JavaScript</button>
+        <button class="chip" type="button" data-code-tab="lua" aria-pressed="false">Luau (Roblox)</button>
+      </div>
+
+      <p class="lang-note by-lang" data-lang="py">
+        <span lang="ja">Python：ブロックの区切りは「字下げ」。メモ書きは <code>#</code> ではじめます。AI・自動化・データ分析で使われます。</span>
+        <span lang="en">Python: blocks are marked out by indentation, and notes begin with <code>#</code>. Used for AI, automation and data analysis.</span>
+      </p>
+      <p class="lang-note by-lang" data-lang="js">
+        <span lang="ja">JavaScript：ブロックの区切りは <code>{ }</code>。メモ書きは <code>//</code> ではじめます。ウェブサイトの動きを作る言葉です。</span>
+        <span lang="en">JavaScript: blocks are marked out by <code>{ }</code>, and notes begin with <code>//</code>. It is the language that makes websites move.</span>
+      </p>
+      <p class="lang-note by-lang" data-lang="lua">
+        <span lang="ja">Luau：ブロックの終わりは <code>end</code>。メモ書きは <code>--</code> ではじめます。Roblox のゲームを作る言葉です。</span>
+        <span lang="en">Luau: a block ends with <code>end</code>, and notes begin with <code>--</code>. It is the language for making Roblox games.</span>
+      </p>
+
+      <div class="parts-list">
+
+        <div class="card">
+          <div class="part-head"><span class="part-no">A</span><h3><span lang="ja">変数</span><span lang="en">Variable</span></h3></div>
+          <p>
+            <span lang="ja">中身を入れて、名前を付けた収納ボックス。あとで名前を呼べば、中身が取り出せます。</span>
+            <span lang="en">A storage box with something inside and a name on it. Call the name later, and out comes the content.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>片付けでいうと</b>　「冬服」と書いたラベル付きの箱</span>
+            <span lang="en"><b>In tidying terms:</b> a box labelled “winter coat”</span>
+          </p>
+          <pre class="code by-lang" data-lang="py">box = "<span lang="ja">冬服</span><span lang="en">winter coat</span>"
+print(box)</pre>
+          <pre class="code by-lang" data-lang="js">let box = "<span lang="ja">冬服</span><span lang="en">winter coat</span>";
+console.log(box);</pre>
+          <pre class="code by-lang" data-lang="lua">local box = "<span lang="ja">冬服</span><span lang="en">winter coat</span>"
+print(box)</pre>
+          <p class="out"><b><span lang="ja">実行結果</span><span lang="en">Result</span></b><span lang="ja">冬服</span><span lang="en">winter coat</span></p>
+        </div>
+
+        <div class="card">
+          <div class="part-head"><span class="part-no">B</span><h3><span lang="ja">データの種類</span><span lang="en">Kinds of data</span></h3></div>
+          <p>
+            <span lang="ja">箱の中身は、まず3種類を覚えれば大丈夫です。<b>文字</b>、<b>数</b>、<b>はい／いいえ</b>。</span>
+            <span lang="en">Three kinds are enough to begin with: <b>text</b>, <b>numbers</b>, and <b>yes / no</b>.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>片付けでいうと</b>　名札（文字）、個数（数）、片付け済みか（はい／いいえ）</span>
+            <span lang="en"><b>In tidying terms:</b> a name tag (text), a count (number), and whether it has been tidied (yes / no)</span>
+          </p>
+          <pre class="code by-lang" data-lang="py">item = "<span lang="ja">冬服</span><span lang="en">coat</span>"  <span class="c"># <span lang="ja">文字</span><span lang="en">text</span></span>
+count = 12  <span class="c"># <span lang="ja">数</span><span lang="en">number</span></span>
+is_clean = True  <span class="c"># <span lang="ja">はい/いいえ</span><span lang="en">yes/no</span></span></pre>
+          <pre class="code by-lang" data-lang="js">const item = "<span lang="ja">冬服</span><span lang="en">coat</span>"; <span class="c">// <span lang="ja">文字</span><span lang="en">text</span></span>
+const count = 12; <span class="c">// <span lang="ja">数</span><span lang="en">number</span></span>
+const isClean = true; <span class="c">// <span lang="ja">はい/いいえ</span><span lang="en">yes/no</span></span></pre>
+          <pre class="code by-lang" data-lang="lua">local item = "<span lang="ja">冬服</span><span lang="en">coat</span>" <span class="c">-- <span lang="ja">文字</span><span lang="en">text</span></span>
+local count = 12 <span class="c">-- <span lang="ja">数</span><span lang="en">number</span></span>
+local isClean = true <span class="c">-- <span lang="ja">はい/いいえ</span><span lang="en">yes/no</span></span></pre>
+        </div>
+
+        <div class="card">
+          <div class="part-head"><span class="part-no">C</span><h3><span lang="ja">リスト</span><span lang="en">List</span></h3></div>
+          <p>
+            <span lang="ja">順番に並んだ、複数の中身です。番号で取り出します。</span>
+            <span lang="en">Several items in order, fetched by number.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>片付けでいうと</b>　仕切りのある引き出し</span>
+            <span lang="en"><b>In tidying terms:</b> a drawer with dividers</span>
+          </p>
+          <pre class="code by-lang" data-lang="py">drawer = ["<span lang="ja">シャツ</span><span lang="en">shirt</span>", "<span lang="ja">靴下</span><span lang="en">socks</span>", "<span lang="ja">帽子</span><span lang="en">hat</span>"]
+print(drawer[0])</pre>
+          <pre class="code by-lang" data-lang="js">const drawer = ["<span lang="ja">シャツ</span><span lang="en">shirt</span>", "<span lang="ja">靴下</span><span lang="en">socks</span>", "<span lang="ja">帽子</span><span lang="en">hat</span>"];
+console.log(drawer[0]);</pre>
+          <pre class="code by-lang" data-lang="lua">local drawer = {"<span lang="ja">シャツ</span><span lang="en">shirt</span>", "<span lang="ja">靴下</span><span lang="en">socks</span>", "<span lang="ja">帽子</span><span lang="en">hat</span>"}
+print(drawer[1])</pre>
+          <p class="out"><b><span lang="ja">実行結果</span><span lang="en">Result</span></b><span lang="ja">シャツ</span><span lang="en">shirt</span></p>
+          <p class="note">
+            <span lang="ja">先頭を「0番目」と数える言語（Python、JavaScript）と、「1番目」と数える言語（Luau）があります。</span>
+            <span lang="en">Some languages call the first item number 0 (Python, JavaScript); others call it number 1 (Luau).</span>
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="part-head"><span class="part-no">D</span><h3><span lang="ja">条件（もし〜なら）</span><span lang="en">Condition (if …)</span></h3></div>
+          <p>
+            <span lang="ja">状況によって、することを変えます。</span>
+            <span lang="en">Does one thing or another, depending on the situation.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>片付けでいうと</b>　もし冬物なら手前へ、そうでなければ奥へ</span>
+            <span lang="en"><b>In tidying terms:</b> if it is winter wear, to the front; otherwise, to the back</span>
+          </p>
+          <pre class="code by-lang" data-lang="py">season = "<span lang="ja">冬</span><span lang="en">winter</span>"
+if season == "<span lang="ja">冬</span><span lang="en">winter</span>":
+    print("<span lang="ja">押入れの手前へ</span><span lang="en">Put it at the front</span>")
+else:
+    print("<span lang="ja">奥へしまう</span><span lang="en">Store it at the back</span>")</pre>
+          <pre class="code by-lang" data-lang="js">const season = "<span lang="ja">冬</span><span lang="en">winter</span>";
+if (season === "<span lang="ja">冬</span><span lang="en">winter</span>") {
+  console.log("<span lang="ja">押入れの手前へ</span><span lang="en">Put it at the front</span>");
+} else {
+  console.log("<span lang="ja">奥へしまう</span><span lang="en">Store it at the back</span>");
+}</pre>
+          <pre class="code by-lang" data-lang="lua">local season = "<span lang="ja">冬</span><span lang="en">winter</span>"
+if season == "<span lang="ja">冬</span><span lang="en">winter</span>" then
+  print("<span lang="ja">押入れの手前へ</span><span lang="en">Put it at the front</span>")
+else
+  print("<span lang="ja">奥へしまう</span><span lang="en">Store it at the back</span>")
+end</pre>
+          <p class="out"><b><span lang="ja">実行結果</span><span lang="en">Result</span></b><span lang="ja">押入れの手前へ</span><span lang="en">Put it at the front</span></p>
+        </div>
+
+        <div class="card">
+          <div class="part-head"><span class="part-no">E</span><h3><span lang="ja">繰り返し</span><span lang="en">Loop</span></h3></div>
+          <p>
+            <span lang="ja">同じことを、順番に何度もします。</span>
+            <span lang="en">Does the same thing over and over, in turn.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>片付けでいうと</b>　引き出しの中身を、1つずつ順番に出す</span>
+            <span lang="en"><b>In tidying terms:</b> taking things out of the drawer, one at a time</span>
+          </p>
+          <pre class="code by-lang" data-lang="py">for item in drawer:
+    print(item)</pre>
+          <pre class="code by-lang" data-lang="js">for (const item of drawer) {
+  console.log(item);
+}</pre>
+          <pre class="code by-lang" data-lang="lua">for _, item in ipairs(drawer) do
+  print(item)
+end</pre>
+          <p class="out"><b><span lang="ja">実行結果</span><span lang="en">Result</span></b><span lang="ja">シャツ → 靴下 → 帽子</span><span lang="en">shirt → socks → hat</span></p>
+        </div>
+
+        <div class="card">
+          <div class="part-head"><span class="part-no">F</span><h3><span lang="ja">関数</span><span lang="en">Function</span></h3></div>
+          <p>
+            <span lang="ja">手順に名前を付けて、いつでも呼び出せるようにします。一度書けば、何度でも使えます。</span>
+            <span lang="en">Gives a procedure a name, so that it may be called at any time. Write it once; use it as often as you like.</span>
+          </p>
+          <p class="analogy">
+            <span lang="ja"><b>片付けでいうと</b>　「しまい方」の手順書。名前を呼ぶだけで実行できる</span>
+            <span lang="en"><b>In tidying terms:</b> a written method for “putting away”, carried out simply by calling its name</span>
+          </p>
+          <pre class="code by-lang" data-lang="py">def put_away(item):
+    print(item + "<span lang="ja">をしまった</span><span lang="en"> put away</span>")
+
+put_away("<span lang="ja">シャツ</span><span lang="en">shirt</span>")</pre>
+          <pre class="code by-lang" data-lang="js">function putAway(item) {
+  console.log(item + "<span lang="ja">をしまった</span><span lang="en"> put away</span>");
+}
+
+putAway("<span lang="ja">シャツ</span><span lang="en">shirt</span>");</pre>
+          <pre class="code by-lang" data-lang="lua">local function putAway(item)
+  print(item .. "<span lang="ja">をしまった</span><span lang="en"> put away</span>")
+end
+
+putAway("<span lang="ja">シャツ</span><span lang="en">shirt</span>")</pre>
+          <p class="out"><b><span lang="ja">実行結果</span><span lang="en">Result</span></b><span lang="ja">シャツをしまった</span><span lang="en">shirt put away</span></p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== 4. 組み立て方 ===== -->
+    <section id="build">
+      <h2><span class="num">4</span><span lang="ja">組み立て方</span><span lang="en">How it is put together</span></h2>
+      <p class="intro">
+        <span lang="ja">どんなコードも、「入力 → 処理 → 出力」でできています。料理でいえば、材料 → 調理 → 料理です。</span>
+        <span lang="en">Every piece of code is built from input → processing → output. In cooking terms: ingredients → cooking → the dish.</span>
+      </p>
+
+      <div class="grid">
+        <div class="card">
+          <h3><span lang="ja">ウェブサイト</span><span lang="en">A website</span></h3>
+          <div class="flow">
+            <div class="fstep"><b><span lang="ja">入力（材料）</span><span lang="en">INPUT (ingredients)</span></b><span lang="ja">ボタンを押す</span><span lang="en">A button is pressed</span></div>
+            <div class="fstep"><b><span lang="ja">処理（調理）</span><span lang="en">PROCESSING (cooking)</span></b><span lang="ja">JavaScript が決める</span><span lang="en">JavaScript decides</span></div>
+            <div class="fstep"><b><span lang="ja">出力（料理）</span><span lang="en">OUTPUT (the dish)</span></b><span lang="ja">画面の表示が変わる</span><span lang="en">The display changes</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3><span lang="ja">AI の自動化</span><span lang="en">AI automation</span></h3>
+          <div class="flow">
+            <div class="fstep"><b><span lang="ja">入力（材料）</span><span lang="en">INPUT (ingredients)</span></b><span lang="ja">新しいメールが届く</span><span lang="en">A new email arrives</span></div>
+            <div class="fstep"><b><span lang="ja">処理（調理）</span><span lang="en">PROCESSING (cooking)</span></b><span lang="ja">AI が要約する</span><span lang="en">The AI summarises it</span></div>
+            <div class="fstep"><b><span lang="ja">出力（料理）</span><span lang="en">OUTPUT (the dish)</span></b><span lang="ja">チャットに通知する</span><span lang="en">A notice goes to the chat</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3><span lang="ja">ゲーム</span><span lang="en">A game</span></h3>
+          <div class="flow">
+            <div class="fstep"><b><span lang="ja">入力（材料）</span><span lang="en">INPUT (ingredients)</span></b><span lang="ja">ジャンプボタン</span><span lang="en">The jump button</span></div>
+            <div class="fstep"><b><span lang="ja">処理（調理）</span><span lang="en">PROCESSING (cooking)</span></b><span lang="ja">キャラの高さを変える</span><span lang="en">The character’s height changes</span></div>
+            <div class="fstep"><b><span lang="ja">出力（料理）</span><span lang="en">OUTPUT (the dish)</span></b><span lang="ja">キャラが跳ぶ</span><span lang="en">The character leaps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="sub-h"><span lang="ja">作る順番は、片付けと同じ</span><span lang="en">The order of work is the same as tidying</span></h3>
+      <ol class="build">
+        <li>
+          <b><span lang="ja">作りたいものを一文で言う</span><span lang="en">Say what you wish to make in one sentence</span></b>
+          <span class="desc"><span lang="ja">例：「ボタンを押したら、今日の運勢が出る」</span><span lang="en">For example: “press a button, and today’s fortune appears”.</span></span>
+        </li>
+        <li>
+          <b><span lang="ja">入力・処理・出力に分ける</span><span lang="en">Divide it into input, processing and output</span></b>
+          <span class="desc"><span lang="ja">材料、調理、料理の3つに分けます。</span><span lang="en">Ingredients, cooking, dish: three parts.</span></span>
+        </li>
+        <li>
+          <b><span lang="ja">小さな部屋に分ける</span><span lang="en">Divide it into small rooms</span></b>
+          <span class="desc"><span lang="ja">ひとつの関数に、ひとつの仕事だけを任せます。</span><span lang="en">Give each function one job only.</span></span>
+        </li>
+        <li>
+          <b><span lang="ja">ひと部屋ずつ作って、そのつど動かす</span><span lang="en">Build one room at a time, and run it each time</span></b>
+          <span class="desc"><span lang="ja">全部作ってから試すより、少しずつ確かめるほうが迷いません。</span><span lang="en">Checking little by little is less bewildering than testing everything at the end.</span></span>
+        </li>
+        <li>
+          <b><span lang="ja">エラーは「住所つきの伝言」</span><span lang="en">An error is a message with an address</span></b>
+          <span class="desc"><span lang="ja">何行目で何が起きたかを教えてくれます。読めば直せます。</span><span lang="en">It tells you what happened, and on which line. Read it, and you can mend it.</span></span>
+        </li>
+        <li>
+          <b><span lang="ja">動いたら、片付ける</span><span lang="en">When it works, tidy up</span></b>
+          <span class="desc"><span lang="ja">名前をわかりやすくして、同じ処理はひとつにまとめます。</span><span lang="en">Give things clearer names, and merge any process that repeats.</span></span>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== 5. 表と裏 ===== -->
+    <section id="layers">
+      <h2><span class="num">5</span><span lang="ja">表と裏：どこで動く？</span><span lang="en">Front and back: where does it run?</span></h2>
+      <p class="intro">
+        <span lang="ja">アプリやサービスは、お店のように「表」と「裏」に分かれて動きます。</span>
+        <span lang="en">Apps and services run rather like a shop, divided into a front and a back.</span>
+      </p>
+
+      <div class="card">
+        <div class="flow">
+          <div class="fstep layer">
+            <span class="name"><span lang="ja">画面</span><span lang="en">The screen</span></span>
+            <b><span lang="ja">フロントエンド</span><span lang="en">FRONT END</span></b>
+            <span lang="ja">お客さんの手元で動きます。ブラウザやスマホの画面です。</span>
+            <span lang="en">Runs in the customer’s hands: the browser, or the phone screen.</span>
+            <small>HTML, CSS, JavaScript, Swift, Kotlin</small>
+          </div>
+          <div class="fstep layer">
+            <span class="name"><span lang="ja">裏方</span><span lang="en">The back room</span></span>
+            <b><span lang="ja">バックエンド（サーバー）</span><span lang="en">BACK END (SERVER)</span></b>
+            <span lang="ja">お店の裏で、注文を受けて処理します。</span>
+            <span lang="en">Behind the shop, it takes the orders and deals with them.</span>
+            <small><span lang="ja">Python・JavaScript など</span><span lang="en">Python, JavaScript and others</span></small>
+          </div>
+          <div class="fstep layer">
+            <span class="name"><span lang="ja">倉庫</span><span lang="en">The warehouse</span></span>
+            <b><span lang="ja">データベース</span><span lang="en">DATABASE</span></b>
+            <span lang="ja">情報をしまっておく場所です。</span>
+            <span lang="en">The place where information is kept.</span>
+            <small><span lang="ja">SQL で出し入れします</span><span lang="en">Put in and taken out with SQL</span></small>
+          </div>
+        </div>
+      </div>
+
+      <p class="note">
+        <span lang="ja">AI の自動化は、多くが「裏方」で動きます。ほかのサービスや AI に頼むときは、「API」という注文窓口を使います。</span>
+        <span lang="en">AI automation mostly runs in the “back room”. To ask another service, or an AI, for something, you use an “API”, a sort of order window.</span>
+      </p>
+    </section>
+
+    <!-- ===== 6. 用語 ===== -->
+    <section id="words">
+      <h2><span class="num">6</span><span lang="ja">用語ミニ辞典</span><span lang="en">A small glossary</span></h2>
+      <p class="intro">
+        <span lang="ja">タップすると、意味が開きます。</span>
+        <span lang="en">Tap an entry to open its meaning.</span>
+      </p>
+
+      <details>
+        <summary>API</summary>
+        <p>
+          <span lang="ja">お店の注文窓口です。決まった書き方で頼むと、答えが返ってきます。AI に仕事を頼むときにも使います。</span>
+          <span lang="en">The shop’s order window. Ask in the prescribed form, and an answer comes back. It is also how you ask an AI to do a job.</span>
+        </p>
+      </details>
+      <details>
+        <summary><span lang="ja">ライブラリ</span><span lang="en">Library</span></summary>
+        <p>
+          <span lang="ja">道具箱です。ほかの人が作った便利な部品を借りて、自分のコードで使えます。</span>
+          <span lang="en">A toolbox. You may borrow useful parts made by others and use them in your own code.</span>
+        </p>
+      </details>
+      <details>
+        <summary><span lang="ja">フレームワーク</span><span lang="en">Framework</span></summary>
+        <p>
+          <span lang="ja">建売住宅の骨組みです。基本の構造が最初からできているので、中身を作ることに集中できます。</span>
+          <span lang="en">A ready-built frame, like a house sold with its structure already in place, so that you can concentrate on what goes inside.</span>
+        </p>
+      </details>
+      <details>
+        <summary><span lang="ja">バグ・デバッグ</span><span lang="en">Bugs and debugging</span></summary>
+        <p>
+          <span lang="ja">バグは、思いどおりに動かない不具合です。片付けでいえば「置き間違い」で、探して直すことをデバッグといいます。</span>
+          <span lang="en">A bug is a fault that stops things working as intended; in tidying terms, a misplaced item. Finding and mending it is called debugging.</span>
+        </p>
+      </details>
+      <details>
+        <summary><span lang="ja">実行（ラン）</span><span lang="en">Run</span></summary>
+        <p>
+          <span lang="ja">書いた手順書のとおりに、コンピュータを動かすことです。</span>
+          <span lang="en">Making the computer carry out the written instructions.</span>
+        </p>
+      </details>
+      <details>
+        <summary><span lang="ja">ターミナル</span><span lang="en">Terminal</span></summary>
+        <p>
+          <span lang="ja">文字だけでコンピュータに指示を出す窓口です。黒い画面に命令を打ち込みます。</span>
+          <span lang="en">A window for giving the computer instructions by text alone: you type commands onto a black screen.</span>
+        </p>
+      </details>
+      <details>
+        <summary>Git</summary>
+        <p>
+          <span lang="ja">変更の履歴を残す記録帳です。片付ける前の写真をとっておくように、何度でも元の状態に戻せます。</span>
+          <span lang="en">A logbook of changes. Like a photograph taken before you tidy, it lets you return to an earlier state as often as you wish.</span>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. はじめの一歩 ===== -->
+    <section id="start">
+      <h2><span class="num">7</span><span lang="ja">はじめの一歩</span><span lang="en">First steps</span></h2>
+      <p class="intro">
+        <span lang="ja">目的から、最初の言葉を選べます。</span>
+        <span lang="en">Choose your first language by what you wish to do.</span>
+      </p>
+
+      <div class="goals">
+        <div class="goal"><span class="want"><span lang="ja">サイトを作りたい</span><span lang="en">I wish to make a website</span></span><span class="arrow">→</span><span class="to"><span lang="ja">HTML・CSS、次に JavaScript</span><span lang="en">HTML and CSS, then JavaScript</span></span></div>
+        <div class="goal"><span class="want"><span lang="ja">AI や自動化を作りたい</span><span lang="en">I wish to build AI or automation</span></span><span class="arrow">→</span><span class="to">Python</span></div>
+        <div class="goal"><span class="want"><span lang="ja">iPhone のアプリ</span><span lang="en">An iPhone app</span></span><span class="arrow">→</span><span class="to">Swift</span></div>
+        <div class="goal"><span class="want"><span lang="ja">Android のアプリ</span><span lang="en">An Android app</span></span><span class="arrow">→</span><span class="to">Kotlin</span></div>
+        <div class="goal"><span class="want"><span lang="ja">Roblox のゲーム</span><span lang="en">A Roblox game</span></span><span class="arrow">→</span><span class="to">Luau</span></div>
+        <div class="goal"><span class="want"><span lang="ja">まず考え方から</span><span lang="en">Begin with the way of thinking</span></span><span class="arrow">→</span><span class="to">Scratch</span></div>
+      </div>
+
+      <p class="closing">
+        <span lang="ja">分ける。名前を付ける。順番を決める。<br>片付け上手の目は、どの言語でも役に立ちます。</span>
+        <span lang="en">Divide. Name. Set in order.<br>A good tidier’s eye is of use in every language.</span>
+      </p>
+    </section>
+
+  </main>
+
+
+  <footer class="wrap">
+    <p><a href="../index.html"><span lang="ja">← ひだまりの家へ戻る</span><span lang="en">← Back to Hidamari House</span></a></p>
+    <p><span lang="ja">コードの地図</span><span lang="en">A Map of Code</span></p>
+  </footer>
+  <script>
+    /* ① 言語スイッチ：html の lang を "ja" と "en" で入れ替えるだけ。
+          どちらを見せるかは、上の CSS の1行が決めます */
+    const langBtn = document.getElementById('lang-toggle');
+    langBtn.addEventListener('click', () => {
+      const next = document.documentElement.lang === 'ja' ? 'en' : 'ja';
+      document.documentElement.lang = next;
+      document.title = next === 'ja'
+        ? 'コードの地図 | ウェブサイトの外へ'
+        : 'A Map of Code | Beyond the Website';
+    });
+
+    /* ② 「作りたいもので選ぶ」：押したボタンの data-filter と、カードの data-kinds を照らし合わせ、
+          合わないカードを hidden（非表示）にする */
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const langCards = document.querySelectorAll('.lang-card');
+    filterButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const f = btn.dataset.filter;
+        langCards.forEach((card) => {
+          const kinds = card.dataset.kinds.split(' ');
+          card.hidden = !(f === 'all' || kinds.includes(f));
+        });
+        filterButtons.forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+      });
+    });
+
+    /* ③ 「共通の部品」の言語切り替え：#parts の data-code を書き換えるだけ。
+          どのコードを見せるかは CSS が決めます */
+    const parts = document.getElementById('parts');
+    const codeTabs = document.querySelectorAll('[data-code-tab]');
+    codeTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        parts.dataset.code = tab.dataset.codeTab;
+        codeTabs.forEach((t) => t.setAttribute('aria-pressed', t === tab ? 'true' : 'false'));
+      });
+    });
+  </script>
+</body>
+</html>

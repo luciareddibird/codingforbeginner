@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <!-- ===== head：表札と書類棚 =====
+       ページの中には見えないけれど、家を建てるのに必要な情報を置く場所です -->
+  <meta charset="UTF-8"><!-- 文字コード：日本語が文字化けしないためのおまじない -->
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- スマホの画面幅に合わせる -->
+  <title>ひだまりの家 | HTMLでできた一軒家</title><!-- ブラウザのタブに出る表札 -->
+
+  <!-- 外の倉庫から字体（フォント）を借りてくる -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Maru+Gothic:wght@400;500&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Mrs+Saint+Delafield&display=swap" rel="stylesheet">
+
+  <!-- ★CSS その1：言語の切り替え用（たった1行）
+       html の lang が "ja" のときは英語を隠し、"en" のときは日本語を隠します。
+       「CSS オフ」のときも言語スイッチだけは効かせたいので、内装とは別の <style> にしてあります -->
+  <style id="lang-style">
+    html[lang="ja"] [lang="en"], html[lang="en"] [lang="ja"] { display: none; }
+  </style>
+
+  <!-- ★CSS その2：内装（色・大きさ・配置）。右下の「CSS」スイッチでこの <style> ごとオン・オフします -->
+  <style id="design-style">
+    /* HTMLが「何をどこに置くか」、CSSが「どう見せるか」です */
+
+    /* --- 色の置き場：ここを変えると家全体の色が変わる --- */
+    :root {
+      --bg: #fbe0d3;              /* 空：夕焼けの余韻 */
+      --bg-grad: linear-gradient(180deg, #fbe0d3 0%, #fdf1ea 45%, #fdf6f2 100%);
+      --wall: #fffaf6;            /* 壁：温かい白 */
+      --floor: #f8e6dd;           /* 床：クリームベージュ */
+      --roof: #c1786a;            /* 屋根：テラコッタローズ */
+      --roof-2: #b0654f;          /* 屋根の影 */
+      --roof-photo: url("img/outsidedaytime.jpg"); /* 屋根に映す写真：明るい表示のときは昼 */
+      --door: #d98a95;            /* ドア：ダスティピンク */
+      --gold: #c9a165;            /* 金の縁取り */
+      --ink: #4a3b34;             /* 文字：温かい焦茶 */
+      --sub: #8a746b;             /* 小さめの文字：くすみベージュ */
+      --line: #ecd6cb;            /* 壁の縁：淡いピンクベージュ */
+      --link: #a85a52;            /* リンク：ローズブラウン */
+      --serif: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+      --sans: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+      --script: "Cormorant Garamond", "Times New Roman", serif; /* 英語の飾り文字 */
+    }
+    /* 夜モード（端末が暗い表示のとき）：屋根の写真も夜の姿に入れ替わります */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #241a19; --bg-grad: linear-gradient(180deg, #241a19 0%, #2a1e1c 100%);
+        --wall: #2f2320; --floor: #3a2b27; --roof: #b0654f; --roof-2: #96543f;
+        --roof-photo: url("img/outsidenighttime.jpg");
+        --door: #c97b83; --gold: #d8b378;
+        --ink: #f3e6df; --sub: #cbb3a8; --line: #4a372f; --link: #e3a39a;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #241a19; --bg-grad: linear-gradient(180deg, #241a19 0%, #2a1e1c 100%);
+      --wall: #2f2320; --floor: #3a2b27; --roof: #b0654f; --roof-2: #96543f;
+      --roof-photo: url("img/outsidenighttime.jpg");
+      --door: #c97b83; --gold: #d8b378;
+      --ink: #f3e6df; --sub: #cbb3a8; --line: #4a372f; --link: #e3a39a;
+    }
+
+    /* --- 家全体の基本設定 --- */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding-bottom: 8rem;            /* 右下のスイッチと重ならない余白 */
+      background: var(--bg-grad);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 17px;
+      line-height: 1.85;
+      transition: background 0.4s;
+    }
+    [data-tag] { position: relative; } /* 間取り図モードのラベルを置く土台 */
+
+    /* header・main・footer は同じ幅の柱にそろえる */
+    header, main, footer {
+      width: min(960px, calc(100% - 2rem));
+      margin-inline: auto;
+    }
+
+    /* --- header（玄関）：屋根 + ドアが並ぶ壁 --- */
+    header { margin-top: 1.5rem; }
+
+    .roof {
+      position: relative;
+      isolation: isolate;
+      /* 上の余白でエンブレムの高さが決まります。
+         小さくするほどエンブレムが屋根の上（空の写っている範囲）へ上がります。
+         屋根は上へ行くほど幅が狭いので、画面幅に追従させてはみ出しを防ぎます */
+      padding: clamp(3.6rem, 9vw, 6.4rem) 1.5rem 1.6rem;
+      text-align: center;
+      color: #fff;
+      /* 写真をそのままの色で見せるぶん、文字の側を守る。
+         近い影で輪郭を、遠い影でぼんやりした暗がりを作る */
+      text-shadow: 0 1px 3px rgba(40, 20, 14, 0.55), 0 2px 18px rgba(40, 20, 14, 0.5);
+    }
+    /* 屋根の形は clip-path で「五角形」に切り抜く。
+       背景は2枚の重ね：上に家の写真、その下に写真が無いときの屋根色 */
+    .roof::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        /* 縦の切り取り位置。小さいほど写真の上のほう（空）が見えます */
+        var(--roof-photo) center 22% / cover no-repeat,
+        linear-gradient(160deg, var(--roof), var(--roof-2));
+      clip-path: polygon(50% 0, 100% 55%, 100% 100%, 0 100%, 0 55%);
+    }
+    /* 家紋のようなマンダラ＋鳥のエンブレム。
+       HTML側は display:none がデフォルト（骨組みには不要な飾りのため）。
+       CSSが効いているときだけ、ここで見えるようにする */
+    .emblem {
+      display: block !important;
+      width: clamp(132px, 21vw, 196px);   /* 画面幅に応じて大きさが変わる */
+      height: auto;
+      margin: 0 auto 0.3rem;
+      /* 白い線が明るい壁に溶けないよう、影を重ねがけする。
+         1枚目が線のすぐ外に暗い縁を作り、2枚目・3枚目がやわらかい暗がりを広げます */
+      filter:
+        drop-shadow(0 0 1px rgba(40, 20, 14, 0.9))
+        drop-shadow(0 1px 3px rgba(40, 20, 14, 0.7))
+        drop-shadow(0 2px 16px rgba(40, 20, 14, 0.5));
+    }
+    .study-flower { display: block !important; }
+    .feather { display: block !important; }
+    .roof h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-weight: 800;
+      font-size: clamp(1.9rem, 6vw, 2.8rem);
+      letter-spacing: 0.1em;
+      line-height: 1.3;
+    }
+    .roof h1 [lang="en"] { font-family: var(--script); font-style: italic; font-weight: 600; letter-spacing: 0.02em; }
+    .roof p { margin: 0.3rem 0 0; font-size: 0.95rem; }
+    .roof p [lang="en"] { font-family: var(--script); font-style: italic; font-size: 1.05em; }
+
+    /* nav：ドアが横に並ぶ場所。★flex＝「引き出しの仕切り板」 */
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 0.7rem;
+      padding: 1.2rem 1rem 0;
+      background: var(--wall);
+      border-bottom: 6px solid var(--line); /* 地面 */
+    }
+    nav a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 3.6rem;
+      padding: 0 1.1rem;
+      border-radius: 999px 999px 0 0;       /* 上だけ丸めてドアの形に */
+      background: var(--door);
+      color: #fff8f5;
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    nav a:hover { filter: brightness(1.08); }
+    nav a [lang="en"] { font-family: var(--script); font-style: italic; font-size: 1.05em; }
+
+    /* --- main（居住スペース）：★grid＝「マス目のある床」 --- */
+    main {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr); /* 6マスに分けて、部屋ごとに使うマス数を決める */
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .room {
+      background: var(--wall);
+      border: 2px solid var(--line);
+      border-radius: 10px 10px 4px 4px;
+      padding: 1.4rem 1.4rem 1.8rem;
+      box-shadow: inset 0 -10px 0 var(--floor); /* 足もとの床 */
+    }
+    .room-living  { grid-column: span 4; } /* 6マス中4マス */
+    .room-kitchen { grid-column: span 2; } /* 6マス中2マス */
+    .room-hall    { grid-column: span 6; } /* 6マスぜんぶ */
+    .room-study   { grid-column: span 3; display: flow-root; } /* flow-root＝float の回り込みを部屋の中で完結させる */
+    .room-bedroom { grid-column: span 3; }
+    .room-utility { grid-column: span 6; }
+
+    .room h2 {
+      display: inline-block;
+      margin: 0 0 0.6rem;
+      padding-bottom: 0.1em;
+      border-bottom: 3px solid var(--gold);
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      line-height: 1.5;
+    }
+    .room h2 [lang="en"] { font-family: var(--script); font-style: italic; font-size: 1.1em; }
+    .room p { margin: 0 0 0.9rem; }
+    .room a { color: var(--link); }
+
+    code {
+      padding: 0.1em 0.4em;
+      border-radius: 4px;
+      background: var(--floor);
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 0.88em;
+    }
+
+    /* メモ用の無地の箱（div） */
+    .tip {
+      margin-top: 1rem;
+      padding: 0.8rem 1rem;
+      border-left: 5px solid var(--door);
+      border-radius: 0 6px 6px 0;
+      background: var(--floor);
+    }
+    .tip p { margin: 0; }
+
+    /* キッチンの棚：同じ「jar」というシールを貼った箱を flex で横並びに */
+    .shelf {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 1rem;
+      padding: 0.7rem;
+      border-radius: 6px;
+      background: var(--floor);
+    }
+    .jar {
+      flex: 1;
+      padding: 0.9rem 0.2rem;
+      border: 2px solid rgba(0, 0, 0, 0.15);
+      border-radius: 6px 6px 14px 14px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      text-align: center;
+    }
+    /* class＝箱に貼るシール。シールごとに色を変えられる */
+    .jar-salt  { background: #fbeee7; color: #4a3b34; }
+    .jar-sugar { background: #f3dcb0; color: #4a3320; }
+    .jar-tea   { background: #e8c3c2; color: #4a2a2c; }
+
+    /* 廊下：ボタンを押すと JavaScript が justify-content の値を書き換える */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0.8rem 0;
+    }
+    .chip {
+      min-height: 40px;
+      padding: 0.3rem 1rem;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      background: var(--wall);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .chip[aria-pressed="true"] {
+      border-color: var(--gold);
+      background: var(--gold);
+      color: #3a2a10;
+    }
+    .chip [lang="en"] { font-family: var(--script); font-style: italic; }
+    .hall {
+      display: flex;                    /* ★ここが flex のはじまり */
+      justify-content: flex-start;      /* ★横方向の並べ方。ボタンでここが変わる */
+      gap: 0.6rem;
+      margin-bottom: 0.9rem;
+      padding: 0.7rem;
+      border-radius: 6px;
+      background: var(--floor);
+    }
+    .box {
+      flex: 0 0 4rem;
+      padding: 0.9rem 0.2rem;
+      border: 2px solid rgba(0, 0, 0, 0.15);
+      border-radius: 6px 6px 14px 14px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      text-align: center;
+    }
+    .box-a { background: #fbeee7; color: #4a3b34; }
+    .box-b { background: #f3dcb0; color: #4a3320; }
+    .box-c { background: #e8c3c2; color: #4a2a2c; }
+
+    /* 書斎の本：★float＝左に寄せて、文章を右に回り込ませる */
+    .book {
+      float: left;
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 88px;
+      margin: 0.3rem 1rem 0.4rem 0;
+      border-radius: 3px 8px 8px 3px;
+      background: linear-gradient(160deg, var(--roof), var(--roof-2));
+      box-shadow: inset 6px 0 0 rgba(0, 0, 0, 0.2);
+      color: #fff;
+      font-family: var(--serif);
+      font-weight: 800;
+    }
+    /* 書斎の小さな薔薇（一本線イラスト） */
+    .study-flower { float: left; width: 40px; height: 62px; margin: 0.3rem 0.6rem 0.4rem 0; color: var(--roof-2); }
+
+    /* 設備室：HTML・CSS・JavaScript の3枚のカード。これも flex で横並び */
+    .tiles {
+      display: flex;
+      flex-wrap: wrap;                  /* 幅が足りなければ折り返す */
+      gap: 0.8rem;
+      margin: 0.8rem 0;
+    }
+    .tile {
+      flex: 1 1 15rem;                  /* 最低15remの幅で、余ったぶんは均等に分け合う */
+      padding: 1rem 1.1rem;
+      border-top: 5px solid var(--line);
+      border-radius: 4px;
+      background: var(--floor);
+    }
+    .tile-css { border-top-color: var(--gold); }
+    .tile-js  { border-top-color: var(--roof-2); }
+    .tile h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      line-height: 1.5;
+    }
+    .tile .role [lang="en"] { font-family: var(--script); font-style: italic; }
+    .tile p { margin: 0 0 0.5rem; }
+    .tile .role, .tile .where { font-size: 0.9rem; color: var(--sub); }
+    .tile ul { margin: 0.3rem 0 0; padding-left: 1.2rem; }
+
+    /* --- footer（出口の棚）--- */
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem 1rem;
+      margin-top: 1rem;
+      padding: 1.2rem 1.4rem;
+      border-top: 6px solid var(--line); /* 基礎 */
+      background: var(--wall);
+      color: var(--sub);
+      font-size: 0.9rem;
+    }
+    footer p { margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+    footer a { color: var(--link); }
+    footer a [lang="en"] { font-family: var(--script); font-style: italic; }
+    .feather { width: 20px; height: 20px; color: var(--gold); flex: none; }
+
+    a:focus-visible, button:focus-visible {
+      outline: 3px solid var(--link);
+      outline-offset: 3px;
+    }
+
+    /* --- 右下のスイッチ3つ：これも flex --- */
+    .toolbar {
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      max-width: calc(100% - 2rem);
+    }
+    .toolbar button {
+      min-height: 44px;
+      padding: 0.5rem 1rem;
+      border: 2px solid var(--roof-2);
+      border-radius: 999px;
+      background: var(--wall);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+    .toolbar .state { margin-left: 0.5em; font-weight: 500; }
+    .toolbar button [lang="en"] { font-family: var(--script); font-style: italic; font-size: 1.05em; }
+
+    /* ===== 間取り図モード：body に class="plan" が付いたときだけ働く =====
+       色を青図面に入れ替えて、data-tag を持つ要素すべてに点線とタグ名を出す */
+    body.plan {
+      --bg: #123063; --bg-grad: #123063; --wall: rgba(255, 255, 255, 0.05); --floor: rgba(255, 255, 255, 0.08);
+      --roof: #1d4a94; --roof-2: #163b78; --gold: #ffd166; --ink: #eaf1ff; --sub: #bcd0f5; --line: rgba(255, 255, 255, 0.55);
+      --door: #ffd166; --link: #ffd166;
+      --roof-photo: none;                 /* 図面には写真を載せない */
+    }
+    body.plan .roof { text-shadow: none; }
+    body.plan .toolbar button { border-color: #ffd166; background: #123063; color: #eaf1ff; }
+    body.plan #plan-toggle { background: #ffd166; color: #1a2a4a; }
+    body.plan [data-tag] {
+      outline: 1.5px dashed rgba(255, 255, 255, 0.75);
+      outline-offset: 3px;
+    }
+    body.plan [data-tag]::before {
+      content: "<" attr(data-tag) ">";
+      position: absolute;
+      top: -19px;
+      left: 0;
+      z-index: 3;
+      padding: 3px 6px;
+      border-radius: 3px;
+      background: #ffd166;
+      color: #1a2a4a;
+      font: 600 11px/1 ui-monospace, Menlo, monospace;
+      letter-spacing: 0;
+      text-align: left;
+      text-decoration: none;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    /* ラベルが重ならないように、図面モードでは少し余白を足す */
+    body.plan main { padding-top: 2.4rem; row-gap: 2.4rem; }
+    body.plan nav { row-gap: 1.8rem; }
+    body.plan footer { margin-top: 2.4rem; }
+    body.plan .roof p { margin-top: 1.6rem; }
+    body.plan .room > *, body.plan .tile > * { margin-top: 1.4rem; }
+    body.plan .shelf, body.plan .tip, body.plan .tiles, body.plan .hall { padding-top: 2.2rem; }
+
+    /* --- スマホでは1列に：部屋を縦に積む --- */
+    @media (max-width: 720px) {
+      .room-living, .room-kitchen, .room-hall, .room-study, .room-bedroom, .room-utility { grid-column: auto; }
+      main { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body { transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ===== body：人が入って見る部屋すべて ===== -->
+
+  <!-- 右下の3つのスイッチ。押したときの動きは、いちばん下の <script>（★JavaScript）が担当します。
+       ボタンに書いてある ON / OFF は「押したらそうなる」という意味です（いまオンなら OFF と表示）。
+       CSS をオフにするとこの箱は普通の位置（ページの先頭）に戻ります -->
+  <div class="toolbar">
+    <button id="lang-toggle" type="button"><span lang="ja">English</span><span lang="en">日本語</span></button>
+    <button id="plan-toggle" type="button"><span lang="ja">間取り図</span><span lang="en">Blueprint</span><span class="state">ON</span></button>
+    <button id="css-toggle" type="button">CSS<span class="state">OFF</span></button>
+  </div>
+
+  <!-- ★日英の書き方：同じ場所に <span lang="ja"> と <span lang="en"> を並べて置き、
+       使わないほうを上の <style id="lang-style"> が隠します -->
+
+  <!-- header：玄関。id="top" は「玄関」という表札 -->
+  <header id="top" data-tag="header">
+    <div class="roof">
+      <img class="emblem" src="img/emblem.png" width="480" height="480" alt="" aria-hidden="true" style="display:none">
+      <h1 data-tag="h1"><span lang="ja">ひだまりの家</span><span lang="en">Hidamari House</span></h1>
+      <p data-tag="p"><span lang="ja">HTMLでできた、小さな一軒家</span><span lang="en">A small house built of HTML</span></p>
+    </div>
+    <!-- nav：ドアが並ぶ場所。a タグ＝別の部屋につながるドア -->
+    <nav data-tag="nav">
+      <a href="#living" data-tag="a"><span lang="ja">リビング</span><span lang="en">Living room</span></a>
+      <a href="#kitchen" data-tag="a"><span lang="ja">キッチン</span><span lang="en">Kitchen</span></a>
+      <a href="#hallway" data-tag="a"><span lang="ja">廊下</span><span lang="en">Hallway</span></a>
+      <a href="#study" data-tag="a"><span lang="ja">書斎</span><span lang="en">Study</span></a>
+      <a href="#bedroom" data-tag="a"><span lang="ja">寝室</span><span lang="en">Bedroom</span></a>
+      <a href="#utility" data-tag="a"><span lang="ja">設備室</span><span lang="en">Utility room</span></a>
+    </nav>
+  </header>
+
+  <!-- main：居住スペース全体。中を section で部屋に区切る -->
+  <main data-tag="main">
+
+    <section id="living" class="room room-living" data-tag="section">
+      <h2 data-tag="h2"><span lang="ja">リビング</span><span lang="en">Living room</span></h2>
+      <p data-tag="p">
+        <span lang="ja">家でいちばん広い部屋です。main タグの中には、このページの主役になる内容を置きます。ここでは main が家の居住スペース全体、その中の section がひとつひとつの部屋にあたります。</span>
+        <span lang="en">The largest room in the house. Inside the main tag sits everything that matters most on the page. Here, main is the whole living space, and each section is a single room.</span>
+      </p>
+      <p data-tag="p">
+        <span lang="ja">右下の「間取り図 ON」を押すと、この家を作っているタグの名前が見えるようになります。</span>
+        <span lang="en">Press “Blueprint ON” at the bottom right, and the name of every tag in this house will appear.</span>
+      </p>
+      <!-- div：ラベルのない無地の箱。中身をまとめるだけで、意味は持たない -->
+      <div class="tip" data-tag="div">
+        <p data-tag="p">
+          <span lang="ja">p はメモ用紙1枚。a は別の部屋へ通じるドア。div は中身をまとめる無地の箱です。</span>
+          <span lang="en">p is a sheet of notepaper. a is a door to another room. div is a plain box that simply holds things together.</span>
+        </p>
+      </div>
+    </section>
+
+    <section id="kitchen" class="room room-kitchen" data-tag="section">
+      <h2 data-tag="h2"><span lang="ja">キッチン</span><span lang="en">Kitchen</span></h2>
+      <p data-tag="p">
+        <span lang="ja">同じ形の箱に、シール（class）を貼って区別します。</span>
+        <span lang="en">Boxes of the same shape can be told apart by sticking a label (a class) on each.</span>
+      </p>
+      <div class="shelf" data-tag="div">
+        <div class="jar jar-salt" data-tag="div"><span lang="ja">塩</span><span lang="en">Salt</span></div>
+        <div class="jar jar-sugar" data-tag="div"><span lang="ja">砂糖</span><span lang="en">Sugar</span></div>
+        <div class="jar jar-tea" data-tag="div"><span lang="ja">茶葉</span><span lang="en">Tea</span></div>
+      </div>
+    </section>
+
+    <!-- 廊下：flex を体験する部屋 -->
+    <section id="hallway" class="room room-hall" data-tag="section">
+      <h2 data-tag="h2"><span lang="ja">廊下（flex）</span><span lang="en">Hallway (flex)</span></h2>
+      <p data-tag="p">
+        <span lang="ja">flex は、引き出しの仕切り板のように、箱を一列に並べる仕組みです。下のボタンを押して、並び方を変えてみましょう。</span>
+        <span lang="en">Flex works like the dividers in a drawer, setting boxes out in a single row. Press the buttons below and watch how they arrange themselves.</span>
+      </p>
+
+      <!-- ボタン：data-justify に「flex に渡す言葉」を持たせておく。★JavaScript が読み取ります -->
+      <div class="controls">
+        <button class="chip" type="button" data-justify="flex-start" aria-pressed="true"><span lang="ja">左寄せ</span><span lang="en">Left</span></button>
+        <button class="chip" type="button" data-justify="center" aria-pressed="false"><span lang="ja">中央</span><span lang="en">Centre</span></button>
+        <button class="chip" type="button" data-justify="flex-end" aria-pressed="false"><span lang="ja">右寄せ</span><span lang="en">Right</span></button>
+        <button class="chip" type="button" data-justify="space-between" aria-pressed="false"><span lang="ja">均等</span><span lang="en">Spread</span></button>
+      </div>
+
+      <!-- 廊下の本体：中の3つの箱が flex で並ぶ -->
+      <div class="hall" id="hall" data-tag="div">
+        <div class="box box-a" data-tag="div"><span lang="ja">箱</span><span lang="en">Box</span></div>
+        <div class="box box-b" data-tag="div"><span lang="ja">箱</span><span lang="en">Box</span></div>
+        <div class="box box-c" data-tag="div"><span lang="ja">箱</span><span lang="en">Box</span></div>
+      </div>
+
+      <p data-tag="p">
+        <span lang="ja">いまの指示：</span><span lang="en">Current rule: </span>
+        <code>.hall { display: flex; justify-content: <b id="flex-value">flex-start</b>; }</code>
+      </p>
+      <p data-tag="p">
+        <span lang="ja">この家では、玄関のドア、キッチンの棚、この廊下、設備室のカード、フッター、右下のスイッチが flex で並んでいます。</span>
+        <span lang="en">In this house, flex lines up the doors at the entrance, the kitchen shelf, this hallway, the cards in the utility room, the footer and the switches at the bottom right.</span>
+      </p>
+    </section>
+
+    <section id="study" class="room room-study" data-tag="section">
+      <h2 data-tag="h2"><span lang="ja">書斎</span><span lang="en">Study</span></h2>
+      <!-- 先に書いた要素が float で左に寄り、あとの文章が回り込む -->
+      <div class="book" data-tag="div" aria-hidden="true"><span lang="ja">本</span><span lang="en">Book</span></div>
+      <svg class="study-flower" viewBox="0 0 40 62" aria-hidden="true" style="display:none">
+        <path d="M23 13 c-3 -6 -12 -4 -11 3 c1 6 8 7 11 4 c3 -3 2 -9 -3 -9 c-3 0 -5 2 -4 5
+                 M20 20 C 15 32, 24 40, 19 52
+                 M17 36 c-6 -2 -10 2 -7 6 M21 40 c6 -2 10 2 7 6"
+              fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p data-tag="p">
+        <span lang="ja">左の「本」は float: left で左に寄せています。文章が本の右側に回り込んでいるのがわかりますか。</span>
+        <span lang="en">The book on the left has been pushed aside with float: left, and the text wraps round it. Can you see it?</span>
+      </p>
+      <p data-tag="p">
+        <span lang="ja">今のウェブ制作では、横並びや均等配置は flex や grid を使うのが主流です。float は、写真のまわりに文章を回り込ませたいときに使います。</span>
+        <span lang="en">Today, lining things up in a row or spacing them evenly is mostly left to flex and grid. Float is kept for wrapping text around a picture.</span>
+      </p>
+    </section>
+
+    <section id="bedroom" class="room room-bedroom" data-tag="section">
+      <h2 data-tag="h2"><span lang="ja">寝室</span><span lang="en">Bedroom</span></h2>
+      <p data-tag="p">
+        <span lang="ja">この部屋の表札は <code>id="bedroom"</code> です。id は家の中で1つだけの名前で、玄関のドア（リンク）がここへ案内してくれます。</span>
+        <span lang="en">This room’s nameplate is <code>id="bedroom"</code>. An id is a name that appears only once in the house, and the doors (links) at the entrance lead you here.</span>
+      </p>
+      <p data-tag="p">
+        <span lang="ja">ゆっくり休んだら、<a href="#top">玄関に戻る</a>こともできます。</span>
+        <span lang="en">When you have rested, you may <a href="#top">return to the entrance</a>.</span>
+      </p>
+    </section>
+
+    <!-- 設備室：HTML・CSS・JavaScript が家のどこで働いているかをまとめた部屋 -->
+    <section id="utility" class="room room-utility" data-tag="section">
+      <h2 data-tag="h2"><span lang="ja">設備室</span><span lang="en">Utility room</span></h2>
+      <p data-tag="p">
+        <span lang="ja">この家は、3つの材料でできています。</span>
+        <span lang="en">This house is made of three materials.</span>
+      </p>
+
+      <div class="tiles" data-tag="div">
+
+        <div class="tile tile-html" data-tag="div">
+          <h3 data-tag="h3">HTML</h3>
+          <p class="role" data-tag="p"><span lang="ja">骨組み</span><span lang="en">The frame</span></p>
+          <p data-tag="p"><span lang="ja">どこに何があるかを決めます。壁、部屋、ドア、文章。</span><span lang="en">Decides what is where: walls, rooms, doors and words.</span></p>
+          <p class="where" data-tag="p"><span lang="ja">書く場所：</span><span lang="en">Written in: </span><code>&lt;body&gt;</code></p>
+        </div>
+
+        <div class="tile tile-css" data-tag="div">
+          <h3 data-tag="h3">CSS</h3>
+          <p class="role" data-tag="p"><span lang="ja">内装</span><span lang="en">The interior</span></p>
+          <p data-tag="p"><span lang="ja">見た目を決めます。</span><span lang="en">Decides how it looks.</span></p>
+          <ul data-tag="ul">
+            <li><span lang="ja">屋根の形と色</span><span lang="en">The shape and colour of the roof</span></li>
+            <li><span lang="ja">ドアの丸み</span><span lang="en">The rounded doors</span></li>
+            <li><span lang="ja">部屋の配置（grid）</span><span lang="en">The layout of the rooms (grid)</span></li>
+            <li><span lang="ja">箱の横並び（flex）</span><span lang="en">Rows of boxes (flex)</span></li>
+          </ul>
+          <p class="where" data-tag="p"><span lang="ja">書く場所：</span><span lang="en">Written in: </span><code>&lt;style&gt;</code></p>
+        </div>
+
+        <div class="tile tile-js" data-tag="div">
+          <h3 data-tag="h3">JavaScript</h3>
+          <p class="role" data-tag="p"><span lang="ja">電気とスイッチ</span><span lang="en">The wiring and switches</span></p>
+          <p data-tag="p"><span lang="ja">押したら動く仕組みを作ります。</span><span lang="en">Makes things happen when you press them.</span></p>
+          <ul data-tag="ul">
+            <li><span lang="ja">右下の3つのスイッチ</span><span lang="en">The three switches at the bottom right</span></li>
+            <li><span lang="ja">廊下の並び替えボタン</span><span lang="en">The hallway buttons</span></li>
+          </ul>
+          <p class="where" data-tag="p"><span lang="ja">書く場所：</span><span lang="en">Written in: </span><code>&lt;script&gt;</code></p>
+        </div>
+
+      </div>
+
+      <div class="tip" data-tag="div">
+        <p data-tag="p">
+          <span lang="ja">試してみましょう。右下の「CSS OFF」を押すと、内装が消えて骨組みだけの家になります。間取り図が見えなくなるのは、見た目を決めているのが CSS だからです。それでもスイッチが動くのは、動かしているのが JavaScript だからです。</span>
+          <span lang="en">Do try it. Press “CSS OFF” at the bottom right, and the interior vanishes, leaving only the frame. The blueprint disappears too, because how things look is CSS’s work. Yet the switches still work, because they are JavaScript’s.</span>
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- footer：出口の棚。連絡先やコピーライトを置く -->
+  <footer data-tag="footer">
+    <p data-tag="p">
+      <svg class="feather" viewBox="0 0 24 24" aria-hidden="true" style="display:none"><path d="M20 4 C12 4, 5 10, 4 20 C10 18, 16 15, 19 9 M8 16 L4 20 M12 12 L9 15 M16 8 L13 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span lang="ja">© 2026 ひだまりの家　HTMLで建てました</span><span lang="en">© 2026 Hidamari House — built of HTML</span>
+    </p>
+    <!-- 家の外へ出るドア。別のページ（コードの地図）へつながります -->
+    <a href="map/index.html" data-tag="a"><span lang="ja">家を出て、街へ ── コードの地図</span><span lang="en">Out of the house, into the town — A Map of Code</span></a>
+    <a href="#top" data-tag="a"><span lang="ja">玄関へ戻る</span><span lang="en">Back to the entrance</span></a>
+  </footer>
+
+  <!-- ★JavaScript：電気とスイッチ。「ボタンが押されたら、これをする」という約束ごとを書く場所です -->
+  <script>
+    /* ① 言語スイッチ：html の lang を "ja" と "en" で入れ替えるだけ。
+          どちらを見せるかは、上の <style id="lang-style"> が決めます */
+    const langBtn = document.getElementById('lang-toggle');
+    langBtn.addEventListener('click', () => {
+      const next = document.documentElement.lang === 'ja' ? 'en' : 'ja';
+      document.documentElement.lang = next;
+      document.title = next === 'ja'
+        ? 'ひだまりの家 | HTMLでできた一軒家'
+        : 'Hidamari House | A house made of HTML';
+    });
+
+    /* ② 間取り図スイッチ：body に plan という名前のシールを貼ったり剥がしたりするだけ。
+          見た目の変化は CSS の body.plan の部分が担当します */
+    const planBtn = document.getElementById('plan-toggle');
+    planBtn.addEventListener('click', () => {
+      const on = document.body.classList.toggle('plan');
+      planBtn.querySelector('.state').textContent = on ? 'OFF' : 'ON'; /* 図面がオンなら、次に押すと OFF */
+    });
+
+    /* ③ CSS スイッチ：内装の <style> をまるごと無効にしたり、戻したりする。
+          ボタンの表示は「押したらどうなるか」：CSS がオンのときは OFF、オフのときは ON */
+    const cssBtn = document.getElementById('css-toggle');
+    const design = document.getElementById('design-style');
+    cssBtn.addEventListener('click', () => {
+      design.sheet.disabled = !design.sheet.disabled;
+      cssBtn.querySelector('.state').textContent = design.sheet.disabled ? 'ON' : 'OFF';
+    });
+
+    /* ④ 廊下のボタン：押されたボタンの data-justify を読み取り、
+          廊下の justify-content に書き込む */
+    const hall = document.getElementById('hall');
+    const flexValue = document.getElementById('flex-value');
+    const chips = document.querySelectorAll('.chip');
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        hall.style.justifyContent = chip.dataset.justify;
+        flexValue.textContent = chip.dataset.justify;
+        chips.forEach((c) => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
+      });
+    });
+  </script>
+</body>
+</html>
